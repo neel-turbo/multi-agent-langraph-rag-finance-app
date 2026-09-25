@@ -1,0 +1,338 @@
+:root {
+  --bg: #ffffff;
+  --surface: #fafaf8;
+  --border: #e3e3e0;
+  --text: #1a1a1a;
+  --muted: #5f6368;
+  --up: #0f7b4f;
+  --down: #b3261e;
+  --accent: #1a1a1a;
+  --marquee-h: 36px; /* sticky ticker height; sticky elements below offset by it */
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: var(--text);
+  background: var(--bg);
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; }
+
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Ticker stays pinned while the page scrolls. Opaque background + z-index so content slides under it. */
+.market-marquee {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  height: var(--marquee-h);
+}
+
+.app-header {
+  padding: 14px 20px 10px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.app-nav { display: flex; gap: 4px; }
+.app-nav a {
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 14px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.app-nav a:hover { color: var(--text); background: var(--surface); }
+.app-nav a[aria-current="page"] { color: #fff; background: var(--accent); }
+
+.app-header h1 { font-size: 17px; margin: 0; letter-spacing: -0.2px; }
+.app-header p { font-size: 12px; color: var(--muted); margin: 3px 0 0; }
+
+/* Conversations left, chat middle, market data right.
+ * Sticky panels stick within the WHOLE grid, not their own row, so a sticky panel must
+ * never share a column with something below it — or it slides over that content. */
+.chat-layout {
+  display: grid;
+  grid-template-columns: 250px minmax(0, 1fr) 340px;
+  flex: 1;
+  align-items: start;
+}
+
+.app-main { min-width: 0; }
+
+.chat-sidebar,
+.app-aside {
+  position: sticky;
+  top: var(--marquee-h); /* sit just below the sticky ticker, not under it */
+  max-height: calc(100vh - var(--marquee-h));
+  overflow-y: auto;
+  background: var(--surface);
+  min-width: 0;
+}
+.chat-sidebar { border-right: 1px solid var(--border); align-self: stretch; }
+.app-aside { border-left: 1px solid var(--border); }
+
+/* Phone-only toolbar: toggles the conversation list. */
+.chat-toolbar { display: none; }
+
+/* Medium: conversations own the left column top to bottom; market data drops under the chat. */
+@media (max-width: 1180px) {
+  .chat-layout {
+    grid-template-columns: 230px minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+  }
+  .chat-sidebar { grid-row: 1 / span 2; }
+  .app-aside {
+    grid-column: 2;
+    position: static;
+    max-height: none;
+    border-left: none;
+    border-top: 1px solid var(--border);
+  }
+}
+
+/* Phone: one column; the conversation list is a collapsible panel under a toolbar. */
+@media (max-width: 760px) {
+  .chat-layout { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; }
+  .chat-toolbar {
+    display: flex;
+    gap: 8px;
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .chat-toolbar button {
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    cursor: pointer;
+  }
+  .chat-toolbar .toolbar-new { margin-left: auto; background: var(--accent); border-color: var(--accent); color: #fff; }
+  .chat-sidebar {
+    grid-row: auto;
+    display: none;
+    position: static;
+    max-height: 50vh;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+  .chat-sidebar.open { display: block; }
+  .chat-sidebar .new-chat { display: none; } /* the toolbar has its own */
+  .app-aside { grid-column: auto; }
+}
+
+button { font: inherit; }
+
+.muted { color: var(--muted); }
+.small { font-size: 12px; }
+.up { color: var(--up); }
+.down { color: var(--down); }
+.link-button {
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--text);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* ─────────── conversation list ─────────── */
+.conversations { padding: 12px 10px; }
+.conversations ul { list-style: none; margin: 8px 0 0; padding: 0; }
+.conversations .small { padding: 0 6px; }
+
+.new-chat {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  text-align: left;
+}
+.new-chat:hover { opacity: 0.9; }
+
+.conversation {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+.conversation:hover { background: #f0f0ed; }
+.conversation.active { background: #e8eef7; }
+.conversation-title {
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.conversation-time { font-size: 11px; color: var(--muted); }
+
+/* ─────────── portfolio screen ─────────── */
+.portfolio {
+  --series-1: #2a78d6;
+  --grid: #ececea;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px 16px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.portfolio-status { padding: 24px 20px; }
+
+.portfolio-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.portfolio-head h2 { font-size: 20px; margin: 0; }
+.portfolio-head p { font-size: 12px; margin: 4px 0 0; }
+.portfolio button:not(.bar-row):not(.link-button) {
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  cursor: pointer;
+}
+
+.stat-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+}
+.stat-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.stat-label { font-size: 12px; color: var(--muted); }
+.stat-value { font-size: 22px; font-weight: 600; letter-spacing: -0.3px; }
+.stat-delta { font-size: 13px; }
+
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr));
+  gap: 16px;
+}
+.chart-card {
+  position: relative;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  min-width: 0;
+}
+.chart-card h3 { font-size: 14px; margin: 0 0 12px; }
+.chart-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.chart-card-head label { font-size: 13px; }
+.footnote { font-size: 11px; color: var(--muted); margin: 8px 0 0; }
+
+/* Horizontal bars in HTML: label · track · value. The whole row is the hit target. */
+.bar-chart { display: flex; flex-direction: column; }
+.bar-row {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr) 132px;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 3px 4px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+.bar-row:hover { background: var(--surface); }
+.bar-label { font-size: 12px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
+.bar-value { font-size: 12px; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.bar-track { display: flex; height: 14px; }
+.bar { display: block; height: 100%; min-width: 2px; }
+.bar.alloc { background: var(--series-1); border-radius: 0 4px 4px 0; }
+.bar.up { background: var(--up); border-radius: 0 4px 4px 0; }
+.bar.down { background: var(--down); border-radius: 4px 0 0 4px; }
+
+.bar-track.diverging .half { flex: 1; display: flex; }
+.bar-track.diverging .loss { justify-content: flex-end; border-right: 1px solid var(--muted); }
+
+.chart-tip {
+  position: fixed;
+  z-index: 20;
+  pointer-events: none;
+  min-width: 170px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  box-shadow: 0 4px 16px rgb(0 0 0 / 0.08);
+  font-size: 12px;
+}
+.chart-tip.inline { position: absolute; }
+.chart-tip dl { display: grid; grid-template-columns: auto auto; gap: 2px 12px; margin: 6px 0 0; }
+.chart-tip dt { color: var(--muted); }
+.chart-tip dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+
+.price-chart { position: relative; width: 100%; }
+.price-chart svg { display: block; overflow: visible; }
+.price-chart .grid { stroke: var(--grid); stroke-width: 1; }
+.price-chart .axis { font-size: 11px; fill: var(--muted); font-variant-numeric: tabular-nums; }
+.price-chart .price-line { fill: none; stroke: var(--series-1); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.price-chart .price-area { fill: var(--series-1); opacity: 0.1; }
+.price-chart .price-dot { fill: var(--series-1); stroke: var(--bg); stroke-width: 2; }
+.price-chart .avg-line { stroke: var(--text); stroke-width: 1; opacity: 0.6; }
+.price-chart .avg-label { font-size: 11px; fill: var(--text); }
+.price-chart .crosshair { stroke: var(--muted); stroke-width: 1; }
+
+.table-scroll { overflow-x: auto; }
+.holdings-table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+.holdings-table th,
+.holdings-table td { padding: 8px 10px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--border); }
+.holdings-table thead th { font-size: 12px; font-weight: 500; color: var(--muted); }
+.holdings-table th[scope="row"],
+.holdings-table thead th:first-child { text-align: left; }
+.holdings-table tbody tr { cursor: pointer; }
+.holdings-table tbody tr:hover { background: var(--surface); }
+.holdings-table tbody tr.selected { background: #e8eef7; }
+.holdings-table .sub { display: block; font-size: 11px; }
+/* Phones: the table scrolls sideways inside its card; keep the stock name pinned. */
+.holdings-table th[scope="row"],
+.holdings-table thead th:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--bg);
+}
+.holdings-table tbody tr:hover th[scope="row"] { background: var(--surface); }
+.holdings-table tbody tr.selected th[scope="row"] { background: #e8eef7; }
+
+@media (max-width: 560px) {
+  .bar-row { grid-template-columns: 70px minmax(0, 1fr) 96px; gap: 6px; }
+  .bar-value .muted { display: none; }
+  .stat-value { font-size: 18px; }
+}

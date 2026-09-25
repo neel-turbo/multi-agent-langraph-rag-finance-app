@@ -1,0 +1,7 @@
+{
+  "node_version": "20",
+  "graphs": {
+    "supervisor": "./src/server/graph/supervisorGraph.ts:graph"
+  },
+  "env": ".env"
+}
